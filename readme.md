@@ -127,3 +127,139 @@ export default App;
 
 Sự khác nhau chính của 2 khái niệm này là component sở hữu dữ liệu. State là chỉ riêng nó có thể sử dụng. Props là dữ liệu mà component con được nhận về từ một component cha.
 Vì phạm vi của state chỉ nằm trong components nên việc truyền dữ liệu từ các components với nhau người ta thường dùng props. Nhưng vấn đề ở đây là props chỉ có thể truyền cho componet con của nó và khi truyền cho các componet cháu, chắt khá rắc rối. Bởi vậy chúng ta có thêm khái niệm về <b>Redux</b>
+
+### 3. Component life cycle trong react
+
+`Life cycle = vòng đời`
+
+- Giống như vòng đời của con người : Sinh ra, lớn lên và mất đi
+- Với component trong react cũng có 3 giai đoạn tương tự
+  + Được tạo ra <b><Mouting></b> : được add vào trong dom (UI)
+  + Qua nhiều thay đổi <b><Updating></b> : 
+  + Qua nhiều thay đổi <b><Unmouting></b> : remove ra khỏi dom (UI)
+  
+- Mỗi 1 giai đoạn sẽ trải qua lần lượt các hàm như bên dưới
+- Tham khảo:
+  ![img_2.png](img_2.png)
+  
+- <b>Mounting</b> : Chỉ diễn ra đúng 1 lần (Sinh ra 1 lần)
+  + constructor
+  + getDerivedStateFromProps
+  + render -> Render lần đầu tiên
+  + Update DOM
+  + ComponentDidMount
+
+- <b>Updating</b> : Thực thi được nhiều lần (Lớn lên 1 lần)
+  + getDerivedStateFromProps
+  + shouldComponentUpdate
+  + render
+  + getSnapshotBeforeUpdate
+  + Update DOM
+  + ComponentDidUpdate
+
+- <b>Unmounting</b> : Chỉ diễn ra đúng 1 lần (Chết đi 1 lần)
+  + ComponentWillUnmount
+
+- Nhiều hàm quá, không nhớ nổi => Tham khảo bản rút gọn
+  ![img_3.png](img_3.png)
+  
+  + ComponentDidMount : Được gọi 1 lần
+  + Hàm ComponentDidUpdate -> Được gọi khi Props hoặc State thay đổi (nhiều lần) : Hàm này hạn chế sử dụng vì dễ gây ra vòng lặp vô tận
+  + ComponentWillUnmount: Được gọi 1 lần
+  
+- Những life cycle của version cũ không dùng nữa
+  + componentWillMount()
+  + componentWillReceiveProps()
+  
+- So sánh Component và PureComponent
+  + Component : hàm shouldComponentUpdate luôn luôn return true
+  + PureComponent : trong shouldComponentUpdate thực hiện so sánh props, state trước và sau
+    + Nếu trước = sau -> Không render
+    + Nếu trước != sau -> render
+  + Khuyến khích : sử dụng PureComponent để nâng cap performance
+  
+- Tác dụng của một vài life cycle
+  + Contructor
+    + Sử dụng super(props)
+    + Khai báo state.
+    + Định nghĩa properties của component
+    ```
+      class App() extends PureComponent {
+          constructor(props) {
+            super(props);
+            this.DEFAULT_MAX_LENGTH = 10;
+            this.state = {
+              productList: [],
+            };
+          }
+      }
+    ```
+  + componentDidMount()
+    + Khởi tạo dữ liệu cho component : call API, biến đổi dữ liệu, cập nhật state
+    ```angular2svg
+       class HomePage extends PureComponent {
+          constructor(props) {
+              super(props);
+              this.state = {
+                loading: true,
+                productList: [],
+              };
+          }
+    
+          async componentDidMount() {
+            try {
+              // Call API
+              analytics.page('Home page');
+              const productList = await productApi.getAll();
+              this.setState({
+                productList,
+                loading: false,
+              });
+            } catch (error) {
+              console.log('Failed to fetch product list: ', error);
+              this.setState({ loading: false });
+            }
+          }
+    
+          render() {
+            const { loading, productList } = this.state;
+            if (loading) return <Loader />;
+            return <ProductList productList={productList}>
+          }
+       }
+    ```
+    
+  + componentWillUnmount()
+    + Cleartimeout hoặc interval nếu có dùng
+    + Reset dữ liệu trên redux nếu cần thiết.
+    ```angular2svg
+      class Countdown extends PureComponent {
+        constructor(props) {
+          super(props);
+          this.state = {
+            currentSecond: 0,
+          };
+        }
+    
+        componentDidMount() {
+          this.timer = setInterval(() => {
+            this.setState(prevState => ({
+              currentSecond: prevState.currentSecond - 1,
+            }));
+          }, 1000);
+        }
+    
+        componentWillUnmount() {
+          if (this.timer) {
+            clearInterval(this.timer);
+          }
+        }
+    
+        render() {
+          const { currentSecond } = this.state;
+          return <p>{currentSecond}</p>;
+        }
+      }
+    ```
+  + getderivedstatefromprops : Tham khảo
+  https://thaunguyen.com/blog/javascript/reactjs-getderivedstatefromprops-la-gi
